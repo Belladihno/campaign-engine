@@ -1,0 +1,10 @@
+# Keep the build context lean — deps are reinstalled inside the image.
+node_modules/
+apps/*/node_modules/
+dist/
+apps/*/dist/
+coverage/
+.git/
+*.log
+.env
+apps/*/.env

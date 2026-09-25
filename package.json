@@ -1,0 +1,25 @@
+{
+  "name": "campaign-engine",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "pnpm --filter api run start:dev",
+    "build": "pnpm --filter api run build",
+    "test": "pnpm --filter api run test",
+    "test:e2e": "pnpm --filter api run test:e2e",
+    "migrate": "pnpm --filter api run migration:run",
+    "docker:up": "docker compose up -d"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "^11.9.0",
+      "onFail": "download"
+    }
+  },
+  "type": "module"
+}
