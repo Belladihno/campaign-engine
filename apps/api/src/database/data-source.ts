@@ -2,6 +2,8 @@ import 'reflect-metadata';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { DataSource } from 'typeorm';
+import { User } from '../modules/auth/entities/user.entity.js';
+import { Workspace } from '../modules/workspaces/entities/workspace.entity.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -25,7 +27,7 @@ const AppDataSource = new DataSource({
   password: required('DB_PASSWORD'),
   synchronize: false,
   logging: process.env.NODE_ENV !== 'production',
-  entities: [],
+  entities: [User, Workspace],
   migrations: [`${__dirname}/migrations/*.js`],
 });
 

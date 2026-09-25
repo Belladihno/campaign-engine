@@ -9,6 +9,7 @@ import { AppService } from './app.service.js';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard.js';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter.js';
 import { ResponseTransformInterceptor } from './common/interceptors/response-transform.interceptor.js';
+import { AuthModule } from './modules/auth/auth.module.js';
 import databaseConfig from './config/database.config.js';
 import jwtConfig from './config/jwt.config.js';
 import redisConfig from './config/redis.config.js';
@@ -59,6 +60,7 @@ import { validateEnv } from './config/validation.js';
         ttl: 60_000,
       }),
     }),
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [
