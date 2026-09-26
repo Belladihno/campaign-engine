@@ -17,8 +17,7 @@ const REQUIRED_VARS = [
 
 export function validateEnv(
   config: Record<string, unknown>,
-): Record<string, unknown> {
-  const missing = REQUIRED_VARS.filter((key) => {
+): Record<string, unknown> {  const missing = REQUIRED_VARS.filter((key) => {
     const value = config[key];
     return value === undefined || value === null || value === '';
   });
@@ -28,4 +27,17 @@ export function validateEnv(
     );
   }
   return config;
+}
+
+// Typed read for registerAs namespaces. validateEnv() runs before any
+// namespace loads, so a missing var here means a programmer error, not a
+// user error — hence the throw instead of a silent `as string` cast.
+export function requiredEnv(name: string): string {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(
+      `Missing required environment variable ${name}. See .env.example.`,
+    );
+  }
+  return value;
 }

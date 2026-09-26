@@ -7,6 +7,7 @@ import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import bcrypt from 'bcrypt';
 import { DataSource, Repository } from 'typeorm';
+import { isUniqueViolation } from '../../database/errors.js';
 import { Workspace } from '../workspaces/entities/workspace.entity.js';
 import { LoginDto } from './dto/login.dto.js';
 import { RegisterDto } from './dto/register.dto.js';
@@ -27,6 +28,9 @@ export class AuthService {
 
   // Creates the user AND its workspace atomically — a half-registered user
   // (no workspace) can never exist (TRD §7.1).
+  // TOCTOU note: the findOne pre-check is a fast path for the common
+  // duplicate case, NOT the guard. Two concurrent registers can both pass
+  // it — the UNIQUE constraint is the real guard, mapped back to 409 here.
   async register(dto: RegisterDto) {
     const existing = await this.users.findOne({
       where: { email: dto.email },
@@ -35,26 +39,33 @@ export class AuthService {
       throw new ConflictException('Email already registered');
     }
     const passwordHash = await bcrypt.hash(dto.password, BCRYPT_COST);
-    const { user, workspace } = await this.dataSource.transaction(
-      async (manager) => {
-        const user = await manager.save(
-          User,
-          manager.create(User, { email: dto.email, passwordHash }),
-        );
-        const workspace = await manager.save(
-          Workspace,
-          // credits set explicitly: save() returns the passed object, and a
-          // DB-side DEFAULT would not be reflected in the register response.
-          manager.create(Workspace, {
-            userId: user.id,
-            name: dto.workspaceName,
-            credits: 0,
-          }),
-        );
-        return { user, workspace };
-      },
-    );
-    return this.toAuthPayload(user, workspace);
+    try {
+      const { user, workspace } = await this.dataSource.transaction(
+        async (manager) => {
+          const user = await manager.save(
+            User,
+            manager.create(User, { email: dto.email, passwordHash }),
+          );
+          const workspace = await manager.save(
+            Workspace,
+            // credits set explicitly: save() returns the passed object, and a
+            // DB-side DEFAULT would not be reflected in the register response.
+            manager.create(Workspace, {
+              userId: user.id,
+              name: dto.workspaceName,
+              credits: 0,
+            }),
+          );
+          return { user, workspace };
+        },
+      );
+      return this.toAuthPayload(user, workspace);
+    } catch (error) {
+      if (isUniqueViolation(error)) {
+        throw new ConflictException('Email already registered');
+      }
+      throw error;
+    }
   }
 
   async login(dto: LoginDto) {

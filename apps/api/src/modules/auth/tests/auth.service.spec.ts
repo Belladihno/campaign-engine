@@ -4,7 +4,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { faker } from '@faker-js/faker';
 import bcrypt from 'bcrypt';
-import { DataSource } from 'typeorm';
+import { DataSource, QueryFailedError } from 'typeorm';
 import { Workspace } from '../../workspaces/entities/workspace.entity.js';
 import { AuthService } from '../auth.service.js';
 import { User } from '../entities/user.entity.js';
@@ -81,6 +81,28 @@ describe('AuthService', () => {
         }),
       ).rejects.toThrow(ConflictException);
       expect(dataSource.transaction).not.toHaveBeenCalled();
+      expect(jwt.sign).not.toHaveBeenCalled();
+    });
+
+    it('throws 409 when a concurrent register wins the race', async () => {
+      // Both requests pass the findOne pre-check; the loser's insert hits
+      // the UNIQUE constraint — mapped back to 409, not 500.
+      users.findOne.mockResolvedValue(null);
+      dataSource.transaction.mockRejectedValueOnce(
+        new QueryFailedError(
+          'INSERT INTO ...',
+          [],
+          Object.assign(new Error('duplicate key value'), { code: '23505' }),
+        ),
+      );
+
+      await expect(
+        service.register({
+          email: faker.internet.email(),
+          password: 'supersecret1',
+          workspaceName: faker.company.name(),
+        }),
+      ).rejects.toThrow(ConflictException);
       expect(jwt.sign).not.toHaveBeenCalled();
     });
   });

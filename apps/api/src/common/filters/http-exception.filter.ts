@@ -28,7 +28,9 @@ export class HttpExceptionFilter implements ExceptionFilter {
       body !== null &&
       'message' in body
     ) {
-      message = (body as { message: unknown }).message;
+      // 'in' narrowing gives body.message: unknown — ValidationPipe's
+      // string[] passes through untouched, no cast needed.
+      message = body.message;
     }
 
     response.status(status).json({

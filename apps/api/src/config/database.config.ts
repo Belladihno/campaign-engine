@@ -1,10 +1,11 @@
 import { registerAs } from '@nestjs/config';
+import { requiredEnv } from './validation.js';
 
-// validateEnv() runs before this loads, so required vars are present.
+// validateEnv() runs before this loads, so requiredEnv() never throws here.
 export default registerAs('database', () => ({
-  host: process.env.DB_HOST as string,
-  port: parseInt(process.env.DB_PORT as string, 10),
-  name: process.env.DB_NAME as string,
-  user: process.env.DB_USER as string,
-  password: process.env.DB_PASSWORD as string,
+  host: requiredEnv('DB_HOST'),
+  port: parseInt(requiredEnv('DB_PORT'), 10),
+  name: requiredEnv('DB_NAME'),
+  user: requiredEnv('DB_USER'),
+  password: requiredEnv('DB_PASSWORD'),
 }));

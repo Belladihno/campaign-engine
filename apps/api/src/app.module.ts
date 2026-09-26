@@ -10,7 +10,10 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard.js';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter.js';
 import { ResponseTransformInterceptor } from './common/interceptors/response-transform.interceptor.js';
 import { AuthModule } from './modules/auth/auth.module.js';
+import { PaymentsModule } from './modules/payments/payments.module.js';
+import { WebhooksModule } from './modules/webhooks/webhooks.module.js';
 import { WorkspacesModule } from './modules/workspaces/workspaces.module.js';
+import { SseModule } from './shared/sse/sse.module.js';
 import databaseConfig from './config/database.config.js';
 import jwtConfig from './config/jwt.config.js';
 import redisConfig from './config/redis.config.js';
@@ -63,6 +66,9 @@ import { validateEnv } from './config/validation.js';
     }),
     AuthModule,
     WorkspacesModule,
+    PaymentsModule,
+    WebhooksModule,
+    SseModule,
   ],
   controllers: [AppController],
   providers: [
