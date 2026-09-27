@@ -1,4 +1,4 @@
-import { BadRequestException } from '@nestjs/common';
+import { BadGatewayException, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
@@ -22,6 +22,7 @@ describe('PaymentsService', () => {
       id: faker.string.uuid(),
       ...value,
     })),
+    update: vi.fn(async () => ({ affected: 1 })),
   };
   const users = { findOne: vi.fn() };
   const config = {
@@ -110,5 +111,22 @@ describe('PaymentsService', () => {
       status: 'pending',
     });
     expect(payments.save).toHaveBeenCalledTimes(1);
+  });
+
+  it('marks the attempt failed when the provider call throws', async () => {
+    const user = { id: faker.string.uuid(), email: faker.internet.email() };
+    users.findOne.mockResolvedValue(user);
+    mockedAxios.post.mockRejectedValue(new Error('provider down'));
+
+    await expect(
+      service.initiate(user.id, faker.string.uuid(), { plan: 'plan_starter' }),
+    ).rejects.toThrow(BadGatewayException);
+    // PENDING was persisted first, so the attempt is traceable —
+    // then flipped to failed, never left dangling.
+    expect(payments.save).toHaveBeenCalledTimes(1);
+    expect(payments.update).toHaveBeenCalledWith(
+      { id: expect.any(String) },
+      { status: 'failed' },
+    );
   });
 });

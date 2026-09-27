@@ -37,8 +37,14 @@ export class PaymentsService {
     private readonly config: ConfigService,
   ) {}
 
-  // Starts a charge and records it PENDING. Credits move only on the
+  // Starts a Paystack charge and records it PENDING. Credits move only on the
   // verified webhook — this method never touches workspace.credits.
+  //
+  // Ordering is load-bearing: the PENDING row is persisted BEFORE the
+  // provider call. A crash or bug between Paystack success and our insert
+  // used to orphan real transactions (Paystack knew them, we didn't —
+  // paid webhooks then skipped as unknown references). Now the worst case
+  // is a stale PENDING row, which confirms nothing and charges nothing.
   async initiate(
     userId: string,
     workspaceId: string,
@@ -56,7 +62,15 @@ export class PaymentsService {
     }
 
     const reference = `ce_${uuidv4()}`;
-    let checkoutUrl: string;
+    const payment = await this.payments.save(
+      this.payments.create({
+        workspaceId,
+        reference,
+        amount: plan.amountKobo,
+        creditsAdded: plan.credits,
+        status: 'pending',
+      }),
+    );
     try {
       const { data } = await axios.post<PaystackInitializeResponse>(
         PAYSTACK_INITIALIZE_URL,
@@ -68,22 +82,20 @@ export class PaymentsService {
           timeout: 15_000,
         },
       );
-      checkoutUrl = data.data.authorization_url;
+      return {
+        checkoutUrl: data.data.authorization_url,
+        reference: payment.reference,
+      };
     } catch {
+      // Provider never saw a completable charge — mark it so the ledger
+      // distinguishes abandoned attempts from awaiting-payment ones.
       // Never leak provider internals (keys, payloads) to the client.
+      await this.payments.update(
+        { id: payment.id },
+        { status: 'failed' },
+      );
       throw new BadGatewayException('Payment provider unavailable');
     }
-
-    await this.payments.save(
-      this.payments.create({
-        workspaceId,
-        reference,
-        amount: plan.amountKobo,
-        creditsAdded: plan.credits,
-        status: 'pending',
-      }),
-    );
-    return { checkoutUrl, reference };
   }
 
   async listHistory(workspaceId: string): Promise<Payment[]> {
