@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { get, post, apiBase } from '../api/client';
 import type { Campaign, Workspace } from '../api/types';
 import { useWorkspaceEvents } from '../api/useWorkspaceEvents';
@@ -66,6 +66,8 @@ function statusPill(status: Campaign['status']) {
 
 export function DashboardPage() {
   const { token } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
   const { notify, host: toastHost } = useToast();
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
@@ -123,6 +125,16 @@ export function DashboardPage() {
     onCampaign: () => void reloadCampaigns(),
     onContact: () => void reloadCampaigns(),
   });
+
+  // Deep-link from the builder's insufficient-credits card: land with the
+  // fund modal already open, then drop the flag so back-nav stays clean.
+  useEffect(() => {
+    const state = location.state as { openFund?: boolean } | null;
+    if (state?.openFund) {
+      setModalOpen(true);
+      navigate('/dashboard', { replace: true, state: {} });
+    }
+  }, [location.state, navigate]);
 
   const filtered = campaigns.filter((c) =>
     c.name.toLowerCase().includes(filter.trim().toLowerCase()),

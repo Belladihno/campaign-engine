@@ -556,6 +556,20 @@ export function CampaignNewPage() {
                         {submitError ??
                           'Required balance exceeds workspace allocation.'}
                       </p>
+                      <button
+                        className="mt-space-xs px-space-md py-space-sm bg-primary-container text-on-primary font-label-md text-label-md font-bold rounded-lg hover:bg-primary transition-colors flex items-center justify-center gap-space-xs self-start"
+                        onClick={() =>
+                          navigate('/dashboard', {
+                            state: { openFund: true },
+                          })
+                        }
+                        type="button"
+                      >
+                        <span className="material-symbols-outlined text-[18px]">
+                          account_balance_wallet
+                        </span>{' '}
+                        Fund credits
+                      </button>
                     </div>
                   )}
                 </div>
