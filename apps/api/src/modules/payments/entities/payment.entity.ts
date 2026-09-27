@@ -24,7 +24,8 @@ export class Payment {
   @JoinColumn({ name: 'workspace_id' })
   workspace: Workspace;
 
-  // Paystack transaction reference — unique per attempt.  @Column({ type: 'varchar', unique: true })
+  // Paystack transaction reference — unique per attempt.
+  @Column({ type: 'varchar', unique: true })
   reference: string;
 
   // Amount charged, in kobo (Paystack's minor unit).
