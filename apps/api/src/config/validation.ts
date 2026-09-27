@@ -18,7 +18,15 @@ const REQUIRED_VARS = [
 
 export function validateEnv(
   config: Record<string, unknown>,
-): Record<string, unknown> {  const missing = REQUIRED_VARS.filter((key) => {
+): Record<string, unknown> {
+  // URL mode (Upstash) replaces the parts — requiring both would make
+  // every managed deploy fail exactly like this one did.
+  const required = config.REDIS_URL
+    ? REQUIRED_VARS.filter(
+        (key) => key !== 'REDIS_HOST' && key !== 'REDIS_PORT',
+      )
+    : REQUIRED_VARS;
+  const missing = required.filter((key) => {
     const value = config[key];
     return value === undefined || value === null || value === '';
   });
