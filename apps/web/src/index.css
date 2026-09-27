@@ -80,17 +80,17 @@
   --spacing-gutter-desktop: 1.5rem;
 
   --font-code-sm: "JetBrains Mono", monospace;
-  --font-body-sm: "Inter", sans-serif;
+  --font-body-sm: "Inter Variable", "Inter", sans-serif;
   --font-code-lg: "JetBrains Mono", monospace;
-  --font-headline-lg: "Inter", sans-serif;
+  --font-headline-lg: "Inter Variable", "Inter", sans-serif;
   --font-code-md: "JetBrains Mono", monospace;
-  --font-body-lg: "Inter", sans-serif;
-  --font-label-md: "Inter", sans-serif;
-  --font-label-lg: "Inter", sans-serif;
-  --font-headline-xl-mobile: "Inter", sans-serif;
-  --font-body-md: "Inter", sans-serif;
-  --font-headline-xl: "Inter", sans-serif;
-  --font-headline-md: "Inter", sans-serif;
+  --font-body-lg: "Inter Variable", "Inter", sans-serif;
+  --font-label-md: "Inter Variable", "Inter", sans-serif;
+  --font-label-lg: "Inter Variable", "Inter", sans-serif;
+  --font-headline-xl-mobile: "Inter Variable", "Inter", sans-serif;
+  --font-body-md: "Inter Variable", "Inter", sans-serif;
+  --font-headline-xl: "Inter Variable", "Inter", sans-serif;
+  --font-headline-md: "Inter Variable", "Inter", sans-serif;
 
   --text-code-sm: 0.6875rem;
   --text-code-sm--line-height: 1rem;
