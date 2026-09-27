@@ -33,15 +33,17 @@ async function request<T>(
     headers,
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
   });
-  if (res.status === 401) {
-    localStorage.removeItem('ce_token');
-    window.location.href = '/';
-    throw new ApiError('Session expired — please log in again.', 401);
-  }
   const payload = (await res.json().catch(() => ({}))) as {
     data?: T;
     message?: string | string[];
   };
+  if (res.status === 401 && window.location.pathname !== '/') {
+    // Genuine expiry mid-session: drop the dead token and bounce to login.
+    // On '/' itself (a failed sign-in) there is nothing to bounce from —
+    // fall through so the backend's message reaches the form.
+    localStorage.removeItem('ce_token');
+    window.location.href = '/';
+  }
   if (!res.ok) {
     const message = Array.isArray(payload.message)
       ? payload.message.join(', ')
