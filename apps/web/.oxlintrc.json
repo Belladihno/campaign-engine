@@ -1,0 +1,12 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["react", "typescript", "oxc"],
+  "rules": {
+    "react/rules-of-hooks": "error",
+    "react/only-export-components": ["warn", { "allowConstantExport": true }],
+    // Mount-time fetch/subscribe effects settle async completions, never
+    // render cascades. No data-fetching library in this shell, so the
+    // rule's preferred pattern doesn't apply — enforced by review instead.
+    "react/set-state-in-effect": "off"
+  }
+}

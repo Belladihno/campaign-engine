@@ -1,11 +1,13 @@
-/* Client mirror of apps/api sms.ts (server decides at submit).
-   GSM-7: 160 chars, 153 concatenated. Unicode: 70 / 67 UTF-16 units. */
+/* Client mirror of apps/api sms.ts (server decides at submit). */
+
 const GSM_BASIC =
   '@£$¥èéùìòÇ\nØø\rÅåΔ_ΦΓΛΩΠΨΣΘΞÆæßÉ !"#¤%&\'()*+,-./0123456789:;<=>?¡' +
   'ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÑÜ§¿abcdefghijklmnopqrstuvwxyzäöñüà';
 const GSM_EXTENDED = '\f^{}\\[~\\]|€';
 
-export function countSegments(message) {
+export type SmsEncoding = 'gsm7' | 'unicode';
+
+export function countSegments(message: string): number {
   let septets = 0;
   for (const ch of message) {
     if (GSM_BASIC.includes(ch)) septets += 1;
@@ -18,7 +20,7 @@ export function countSegments(message) {
   return septets <= 160 ? 1 : Math.ceil(septets / 153);
 }
 
-export function detectEncoding(message) {
+export function detectEncoding(message: string): SmsEncoding {
   for (const ch of message) {
     if (!GSM_BASIC.includes(ch) && !GSM_EXTENDED.includes(ch)) {
       return 'unicode';

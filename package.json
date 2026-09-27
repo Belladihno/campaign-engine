@@ -5,8 +5,11 @@
   "main": "index.js",
   "scripts": {
     "dev": "pnpm --filter api run start:dev",
+    "dev:web": "pnpm --filter web run dev",
     "build": "pnpm --filter api run build",
+    "build:web": "pnpm --filter web run build",
     "test": "pnpm --filter api run test",
+    "test:web": "pnpm --filter web run test",
     "test:e2e": "pnpm --filter api run test:e2e",
     "migrate": "pnpm --filter api run migration:run",
     "docker:up": "docker compose up -d"
