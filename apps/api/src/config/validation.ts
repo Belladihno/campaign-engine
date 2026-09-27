@@ -13,6 +13,7 @@ const REQUIRED_VARS = [
   'JWT_EXPIRY',
   'PAYSTACK_SECRET_KEY',
   'AT_API_KEY',
+  'AT_WEBHOOK_SECRET',
 ] as const;
 
 export function validateEnv(

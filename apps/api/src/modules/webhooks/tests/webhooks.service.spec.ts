@@ -38,7 +38,7 @@ describe('WebhooksService (Paystack)', () => {
   const config = {
     getOrThrow: vi.fn((key: string) => {
       if (key === 'PAYSTACK_SECRET_KEY') return SECRET;
-      if (key === 'AT_API_KEY') return 'at_test_key';
+      if (key === 'AT_WEBHOOK_SECRET') return 'at_webhook_test';
       throw new Error(`Unexpected config key: ${key}`);
     }),
   };
@@ -180,7 +180,7 @@ describe('WebhooksService (Africa\u2019s Talking)', () => {
   const config = {
     getOrThrow: vi.fn((key: string) => {
       if (key === 'PAYSTACK_SECRET_KEY') return SECRET;
-      if (key === 'AT_API_KEY') return 'at_test_key';
+      if (key === 'AT_WEBHOOK_SECRET') return 'at_webhook_test';
       throw new Error(`Unexpected config key: ${key}`);
     }),
   };
@@ -205,7 +205,7 @@ describe('WebhooksService (Africa\u2019s Talking)', () => {
     service = module.get<WebhooksService>(WebhooksService);
   });
 
-  it('marks the contact DELIVERED on a Delivered receipt', async () => {
+  it('marks the contact DELIVERED on a Success receipt', async () => {
     const contact = {
       id: faker.string.uuid(),
       campaignId: faker.string.uuid(),
@@ -216,8 +216,8 @@ describe('WebhooksService (Africa\u2019s Talking)', () => {
     contacts.findOne.mockResolvedValue(contact);
 
     const result = await service.handleAfricasTalking(
-      { messageId: 'ATX123', status: 'Delivered' },
-      'at_test_key',
+      { messageId: 'ATX123', status: 'Success' },
+      'at_webhook_test',
     );
 
     expect(contacts.findOne).toHaveBeenCalledWith({
@@ -247,7 +247,7 @@ describe('WebhooksService (Africa\u2019s Talking)', () => {
 
     const result = await service.handleAfricasTalking(
       { messageId: 'ATX456', status: 'Failed' },
-      'at_test_key',
+      'at_webhook_test',
     );
 
     expect(contacts.update).toHaveBeenCalledWith(
@@ -255,5 +255,17 @@ describe('WebhooksService (Africa\u2019s Talking)', () => {
       { status: 'FAILED' },
     );
     expect(result).toEqual({ received: true, processed: true });
+  });
+
+  // Provider contract: never non-200. A wrong secret acks unprocessed —
+  // AT would otherwise retry a request that can never succeed.
+  it('acks 200 unprocessed on a wrong callback secret', async () => {
+    const result = await service.handleAfricasTalking(
+      { messageId: 'ATX789', status: 'Success' },
+      'wrong-secret',
+    );
+
+    expect(result).toEqual({ received: true, processed: false });
+    expect(contacts.findOne).not.toHaveBeenCalled();
   });
 });

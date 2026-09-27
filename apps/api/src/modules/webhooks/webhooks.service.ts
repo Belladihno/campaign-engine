@@ -118,20 +118,22 @@ export class WebhooksService {
 
   // Africa's Talking delivery receipt (TRD §7.6): match the contact by the
   // message id the SDK returned at send time, advance it, emit SSE.
-  // Sandbox-grade auth: shared secret header compared against AT_API_KEY
-  // (production would use IP allowlisting). Unknown ids and interim
-  // statuses ack 200 unprocessed — retries cannot heal them.
+  //
+  // Auth is URL-based by provider design: the dashboard-registered callback
+  // URL carries ?secret=<AT_WEBHOOK_SECRET>, compared here. A mismatch (or
+  // a missing/garbled payload) still answers 200 unprocessed — AT treats
+  // non-200 as retryable, and nothing about a bad secret heals on retry.
   async handleAfricasTalking(
     receipt: { messageId?: string; status?: string },
     secret: string | undefined,
   ): Promise<{ received: boolean; processed: boolean }> {
-    const expected = this.config.getOrThrow<string>('AT_API_KEY');
+    const expected = this.config.getOrThrow<string>('AT_WEBHOOK_SECRET');
     if (
       !secret ||
       secret.length !== expected.length ||
       !timingSafeEqual(Buffer.from(secret), Buffer.from(expected))
     ) {
-      throw new UnauthorizedException('Invalid receipt secret');
+      return { received: true, processed: false };
     }
     const { messageId, status } = receipt;
     if (!messageId || !status) {
@@ -143,13 +145,11 @@ export class WebhooksService {
     if (!contact) {
       return { received: true, processed: false };
     }
+    // Provider vocabulary: 'Success' delivered; anything else terminal
+    // (Failed, Rejected, …) counts as failed.
     const next =
-      status === 'Delivered'
-        ? ContactStatus.DELIVERED
-        : status === 'Failed' || status === 'Rejected'
-          ? ContactStatus.FAILED
-          : null;
-    if (!next || contact.status === next) {
+      status === 'Success' ? ContactStatus.DELIVERED : ContactStatus.FAILED;
+    if (contact.status === next) {
       return { received: true, processed: false };
     }
     await this.contacts.update({ id: contact.id }, { status: next });

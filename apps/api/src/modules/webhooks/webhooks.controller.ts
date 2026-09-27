@@ -4,6 +4,7 @@ import {
   Headers,
   HttpCode,
   Post,
+  Query,
   Req,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -33,14 +34,15 @@ export class WebhooksController {
     return this.webhooks.handlePaystack(rawBody, signature);
   }
 
+  // Secret arrives as ?secret= (dashboard-registered URL) and the route
+  // never answers non-200: AT retries those as deliverable failures.
   @Post('africas-talking')
   @HttpCode(200)
   handleAfricasTalking(
     @Body() body: Record<string, unknown>,
-    @Headers('x-at-secret') secret: string | undefined,
+    @Query('secret') secret: string | undefined,
   ) {
-    const messageId =
-      typeof body?.messageId === 'string' ? body.messageId : undefined;
+    const messageId = typeof body?.id === 'string' ? body.id : undefined;
     const status = typeof body?.status === 'string' ? body.status : undefined;
     return this.webhooks.handleAfricasTalking({ messageId, status }, secret);
   }
