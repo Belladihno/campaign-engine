@@ -62,6 +62,10 @@ export class PaymentsService {
     }
 
     const reference = `ce_${uuidv4()}`;
+    // Where Paystack sends the user after checkout. Optional: unset locally
+    // (dashboard default applies); set in deployed envs to bring the user
+    // home. The credits themselves still arrive via webhook + SSE.
+    const frontendUrl = this.config.get<string>('FRONTEND_URL');
     const payment = await this.payments.save(
       this.payments.create({
         workspaceId,
@@ -74,7 +78,14 @@ export class PaymentsService {
     try {
       const { data } = await axios.post<PaystackInitializeResponse>(
         PAYSTACK_INITIALIZE_URL,
-        { email: user.email, amount: plan.amountKobo, reference },
+        {
+          email: user.email,
+          amount: plan.amountKobo,
+          reference,
+          ...(frontendUrl
+            ? { callback_url: `${frontendUrl.replace(/\/$/, '')}/dashboard?funded=1` }
+            : {}),
+        },
         {
           headers: {
             Authorization: `Bearer ${this.config.getOrThrow<string>('PAYSTACK_SECRET_KEY')}`,

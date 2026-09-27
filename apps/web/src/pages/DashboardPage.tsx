@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { get, post, apiBase } from '../api/client';
 import type { Campaign, Workspace } from '../api/types';
 import { useWorkspaceEvents } from '../api/useWorkspaceEvents';
@@ -68,6 +68,7 @@ export function DashboardPage() {
   const { token } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const [params, setParams] = useSearchParams();
   const { notify, host: toastHost } = useToast();
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
@@ -135,6 +136,15 @@ export function DashboardPage() {
       navigate('/dashboard', { replace: true, state: {} });
     }
   }, [location.state, navigate]);
+
+  // Paystack return: credits land via webhook + SSE, but acknowledge the
+  // return immediately so a slow webhook doesn't look like a dead end.
+  useEffect(() => {
+    if (params.get('funded') !== null) {
+      notify('Payment received — credits land as soon as Paystack confirms.', 'success');
+      setParams({}, { replace: true });
+    }
+  }, [params, setParams, notify]);
 
   const filtered = campaigns.filter((c) =>
     c.name.toLowerCase().includes(filter.trim().toLowerCase()),

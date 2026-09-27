@@ -30,6 +30,7 @@ describe('PaymentsService', () => {
       if (key === 'PAYSTACK_SECRET_KEY') return 'sk_test_mock';
       throw new Error(`Unexpected config key: ${key}`);
     }),
+    get: vi.fn((_key: string) => undefined),
   };
 
   beforeEach(async () => {
@@ -113,8 +114,7 @@ describe('PaymentsService', () => {
     expect(payments.save).toHaveBeenCalledTimes(1);
   });
 
-  it('marks the attempt failed when the provider call throws', async () => {
-    const user = { id: faker.string.uuid(), email: faker.internet.email() };
+  it('marks the attempt failed when the provider call throws', async () => {    const user = { id: faker.string.uuid(), email: faker.internet.email() };
     users.findOne.mockResolvedValue(user);
     mockedAxios.post.mockRejectedValue(new Error('provider down'));
 
@@ -127,6 +127,33 @@ describe('PaymentsService', () => {
     expect(payments.update).toHaveBeenCalledWith(
       { id: expect.any(String) },
       { status: 'failed' },
+    );
+  });
+
+  it('sends callback_url only when FRONTEND_URL is configured', async () => {
+    const user = { id: faker.string.uuid(), email: faker.internet.email() };
+    users.findOne.mockResolvedValue(user);
+    mockedAxios.post.mockResolvedValue({
+      data: {
+        data: {
+          authorization_url: 'https://checkout.paystack.com/mock',
+          access_code: 'mock',
+          reference: 'ce_mock',
+        },
+      },
+    });
+    config.get.mockReturnValueOnce('https://app.example.com/');
+
+    await service.initiate(user.id, faker.string.uuid(), {
+      plan: 'plan_starter',
+    });
+
+    expect(mockedAxios.post).toHaveBeenCalledWith(
+      'https://api.paystack.co/transaction/initialize',
+      expect.objectContaining({
+        callback_url: 'https://app.example.com/dashboard?funded=1',
+      }),
+      expect.anything(),
     );
   });
 });
