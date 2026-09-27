@@ -11,13 +11,10 @@ import { CampaignStatus } from '../campaigns/enums/campaign-status.enum.js';
 import { ContactStatus } from '../campaigns/enums/contact-status.enum.js';
 import { AfricasTalkingService } from './delivery.service.js';
 
-// BullMQ worker for the 'delivery' queue (TRD §7.5). One job per campaign.
-// The limiter is ENFORCED here (not display text): sends run sequentially
-// today so 10/sec never binds — but it caps the blast radius the day
-// concurrency rises, and providers throttle aggressive senders.
-// Idempotency (dual-send prevention): the campaign row is locked before
-// any transition, non-PENDING jobs no-op, and only QUEUED contacts are
-// ever touched — a retry resumes exactly where the crash left off.
+// BullMQ worker: one job per campaign. The limiter is enforced, not
+// displayed — sends run sequentially today, capping future concurrency.
+// Dual-send prevention: locked row transitions, non-PENDING no-ops,
+// QUEUED-only resume.
 @Processor('delivery', { limiter: { max: 10, duration: 1000 } })
 @Injectable()
 export class DeliveryProcessor extends WorkerHost {
@@ -41,7 +38,7 @@ export class DeliveryProcessor extends WorkerHost {
         where: { id: job.data.campaignId },
         lock: { mode: 'pessimistic_write' },
       });
-      // Duplicate, late, or already-handled job — safe no-op.
+      // Duplicate, late, or handled job — safe no-op.
       if (!locked || locked.status !== CampaignStatus.PENDING) {
         return null;
       }
@@ -70,11 +67,9 @@ export class DeliveryProcessor extends WorkerHost {
         contact.status = ContactStatus.SENT;
         contact.atMessageId = messageId;
       } catch (error) {
-        // Provider rejection for THIS recipient — recorded as FAILED,
-        // dispatch continues with the rest. Truly unexpected errors (DB
-        // loss mid-loop) escape to BullMQ, which retries the job; the
-        // QUEUED-only resume makes that safe.
-        // Contact id + reason only — phone numbers stay out of logs.
+        // Per-recipient rejection → FAILED, dispatch continues. Unexpected
+        // errors (DB loss) escape to BullMQ retries; QUEUED-only resume
+        // keeps that safe. Contact id + reason only — no phone numbers.
         this.logger.warn(
           `Contact ${contact.id} failed: ${error instanceof Error ? error.message : 'unknown error'}`,
         );
@@ -93,9 +88,7 @@ export class DeliveryProcessor extends WorkerHost {
   }
 
   // Exhausted retries land here (fires per failed attempt — the guard
-  // restricts action to the last one). Recounts from the database rather
-  // than trusting in-memory tallies, so partial progress across attempts
-  // resolves to the honest terminal state.
+  // keeps only the last). Recounts from the database, never memory.
   @OnWorkerEvent('failed')
   async onFailed(job: Job<DeliveryJobPayload>): Promise<void> {
     const maxAttempts = job.opts.attempts ?? 3;

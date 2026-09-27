@@ -19,9 +19,8 @@ import { SseService, WorkspaceEvent } from '../../shared/sse/sse.service.js';
 import { CampaignsService } from './campaigns.service.js';
 import { CreateCampaignDto } from './dto/create-campaign.dto.js';
 
-// NOTE: `events` is declared before `:id` — Nest matches routes in
-// definition order, and `GET /campaigns/events` would otherwise be
-// swallowed by `GET /campaigns/:id` with id='events'.
+// `events` precedes `:id` — Nest matches in definition order, and
+// `GET /campaigns/events` would otherwise route as id='events'.
 @Controller('campaigns')
 export class CampaignsController {
   constructor(
@@ -30,10 +29,8 @@ export class CampaignsController {
     private readonly jwt: JwtService,
   ) {}
 
-  // Live stream for the status panel (TRD §5.3). EventSource cannot send
-  // Authorization headers, so the JWT travels as ?token= — validated here,
-  // on this route only. SseService is global; JwtService is the shared
-  // instance via AuthModule (single secret/expiry configuration).
+  // Live stream (TRD §5.3). EventSource cannot send headers, so the JWT
+  // travels as ?token= — validated here, on this route only.
   @Public()
   @Sse('events')
   async events(
@@ -55,9 +52,8 @@ export class CampaignsController {
     return this.sse.getStream(workspaceId);
   }
 
-  // Idempotency-Key (optional): retried POSTs return the ORIGINAL campaign
-  // with 200 instead of charging twice; fresh creates answer 201.
-  // passthrough keeps the global { data } envelope intact.
+  // Optional Idempotency-Key: replays answer 200 with the original,
+  // fresh creates 201. Passthrough preserves the { data } envelope.
   @Post()
   async create(
     @CurrentUser('workspaceId') workspaceId: string,

@@ -5,8 +5,7 @@ import { Payment } from './entities/payment.entity.js';
 import { PaymentsController } from './payments.controller.js';
 import { PaymentsService } from './payments.service.js';
 
-// PaymentsService is exported: webhooks (Step 10) confirm PENDING records
-// by reference when Paystack calls back.
+// PaymentsService is exported: webhooks confirm PENDING records by reference.
 @Module({
   imports: [TypeOrmModule.forFeature([Payment, User])],
   controllers: [PaymentsController],

@@ -3,9 +3,7 @@ import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator.js';
 
-// Applied globally via APP_GUARD (TRD §7.1). Routes opt out with @Public().
-// NOTE: the 'jwt' strategy itself lands in Step 7 (auth module) — until then
-// only @Public() routes can serve traffic.
+// Global JWT gate — routes opt out with @Public().
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
   constructor(private readonly reflector: Reflector) {

@@ -1,5 +1,5 @@
-/* Register + login on the Stitch auth screen. Real API calls — the alert
-   box shows backend errors, the footer dot shows API reachability. */
+/* Register + login. The alert box shows backend errors; the footer dot
+   shows API reachability. */
 import { BASE_URL, post } from './api.js';
 import { getToken, setToken, redirect } from './utils.js';
 

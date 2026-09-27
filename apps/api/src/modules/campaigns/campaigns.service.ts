@@ -28,9 +28,8 @@ export interface DeliveryJobPayload {
 // in flight) — only older PENDING rows count as orphans.
 const ORPHAN_AGE_MS = 60_000;
 
-// A create with no key behaves exactly as before (key is optional).
+// A create with no key behaves as before (key is optional).
 const MAX_KEY_LENGTH = 64;
-// Winner-write visibility window for a lost key race (see create()).
 const REPLAY_POLL_ATTEMPTS = 5;
 const REPLAY_POLL_MS = 50;
 
@@ -47,31 +46,25 @@ export class CampaignsService implements OnModuleInit {
     @InjectQueue('delivery') private readonly deliveryQueue: Queue,
   ) {}
 
-  // Creates the campaign, reserves credits, and enqueues dispatch (TRD §5.2).
-  // The credit check AND deduct happen inside one transaction under a
-  // workspace row lock — concurrent creates serialize instead of
-  // overspending (TOCTOU audit). The BullMQ job is enqueued only after a
-  // successful commit, never before (TRD §7.3).
+  // Credit check AND deduct run in one transaction under a workspace row
+  // lock — concurrent creates serialize instead of overspending. The job
+  // is enqueued only after commit, never before.
   //
-  // Idempotency-Key (optional header): retried POSTs resolve to the
-  // original campaign instead of charging twice.
-  //
+  // Optional Idempotency-Key: retried POSTs resolve to the original.
   // Postgres aborts a transaction on ANY error, so the key claim cannot
-  // live inside the create transaction (a lost insert race would poison
-  // it). Instead: fast-path read outside the tx, claim inside, and on a
-  // unique violation the tx rolls back cleanly — then poll outside the tx
-  // for the winner's linked campaign.
+  // live inside the create transaction — on a unique violation the tx
+  // rolls back, then the winner is polled for outside of it.
   async create(
     workspaceId: string,
     dto: CreateCampaignDto,
     idempotencyKey?: string,
   ): Promise<{ campaign: Campaign; replayed: boolean }> {
-    // Duplicate numbers would double-send and double-charge — collapse them
-    // and bill for unique recipients only.
+    // Duplicate numbers would double-send and double-charge — bill unique
+    // recipients only.
     const phones = [...new Set(dto.contacts.map((p) => p.trim()))];
     const key = this.normalizeKey(idempotencyKey);
-    // Carriers bill per segment (fix #6): a unicode message costs more
-    // credits per recipient than a GSM-7 one of the same character length.
+    // Carriers bill per segment: unicode costs more per recipient than
+    // GSM-7 of the same character length.
     const { segments } = describeSms(dto.message);
     const cost = phones.length * segments;
 
@@ -140,8 +133,7 @@ export class CampaignsService implements OnModuleInit {
         return { campaign: created, replayed: false };
       });
     } catch (error) {
-      // Lost the key race: our tx rolled back, the connection is healthy —
-      // resolve to the winner's campaign (or 409 if it never links).
+      // Lost the key race: our tx rolled back — resolve to the winner.
       if (key && isUniqueViolation(error)) {
         for (let attempt = 0; attempt < REPLAY_POLL_ATTEMPTS; attempt += 1) {
           const replay = await this.findLinkedCampaign(workspaceId, key);
@@ -157,19 +149,17 @@ export class CampaignsService implements OnModuleInit {
     }
 
     if (!outcome.replayed) {
-      // Idempotent worker (Step 12) resumes from QUEUED, so a retry after a
-      // midway crash never re-sends — attempts/backoff here are safe.
+      // Safe: the worker resumes from QUEUED, so a midway-crash retry
+      // never re-sends.
       await this.enqueueDelivery(outcome.campaign.id);
     }
     const campaign = await this.getOne(workspaceId, outcome.campaign.id);
     return { campaign, replayed: outcome.replayed };
   }
 
-  // Crash recovery: a commit followed by a process death before enqueue (or
-  // a failed enqueue) leaves a PENDING orphan no worker will ever see.
-  // Re-enqueue stale ones on boot. Duplicates are harmless — the worker is
-  // idempotent (row lock + QUEUED-only resume), so a job that survived the
-  // crash alongside its campaign simply no-ops on second pickup.
+  // Crash recovery: a commit followed by death before enqueue leaves a
+  // PENDING orphan no worker will see. Re-enqueue stale ones on boot —
+  // duplicates no-op via the worker's status gate.
   async onModuleInit(): Promise<void> {
     const orphans = await this.campaigns.find({
       where: {

@@ -7,7 +7,7 @@ import { ProcessedWebhookEvent } from './entities/processed-webhook-event.entity
 import { WebhooksController } from './webhooks.controller.js';
 import { WebhooksService } from './webhooks.service.js';
 
-// SseService needs no import — SseModule is global (TRD Step 13).
+// SseService needs no import — SseModule is global.
 @Module({
   imports: [
     TypeOrmModule.forFeature([

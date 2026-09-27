@@ -52,6 +52,24 @@ pnpm dev                    # API on :3000 (reads apps/api/.env)
 
 Sandbox conveniences: `AT_USERNAME=sandbox` sends to the AT simulator (no charge); Paystack test mode + a tunnel (`ngrok http 3000`) for public webhook URLs. Register `CampaignEng` as sender ID or leave `AT_SENDER_ID` blank (unregistered senders are rejected).
 
+## Deploying (Render API + Neon Postgres + Upstash Redis + Vercel shell)
+
+1. **Neon:** create a project + database; keep the connection details.
+   Split them into `DB_HOST` (direct host, not `-pooler`), `DB_PORT`,
+   `DB_NAME`, `DB_USER`, `DB_PASSWORD`, and set `DB_SSL=true`.
+2. **Upstash:** create a free Redis database; copy the `rediss://` URL.
+3. **Render:** Blueprints → New Blueprint Instance → this repo
+   (`render.yaml` declares the API service). Set `REDIS_URL`, the Neon
+   parts, Paystack/AT keys (`sync: false` in the blueprint).
+   The image self-migrates on boot; no separate migrate step.
+3. **Webhooks go public:** point Paystack and the AT dashboard at
+   `https://<api>.onrender.com/api/v1/webhooks/...` (AT needs
+   `?secret=<AT_WEBHOOK_SECRET>` on its URL). Starter plan keeps the
+   service awake — slept services turn webhooks into retries.
+4. **Vercel:** import the repo, Root Directory `apps/web`, no build.
+   Then point the shell at the API from any page's console:
+   `localStorage.setItem('ce_api_url', 'https://<api>.onrender.com/api/v1')`.
+
 ## Running Tests
 
 ```bash

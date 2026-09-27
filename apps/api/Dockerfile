@@ -20,14 +20,10 @@ RUN pnpm --filter api run build
 # Self-contained prod deploy: package files (incl. dist) + prod-only deps.
 RUN pnpm --filter api deploy --prod /prod/api
 
-# Stage 3 — runtime (prod deps only)
-FROM node:22-alpine AS runtime
-COPY --from=build /prod/api /app/apps/api
-WORKDIR /app/apps/api
-EXPOSE 3000
-CMD ["node", "dist/main.js"]
-
-# Stage 4 — development (local dev override only, never shipped)
+# Stage 3 — development (local dev override only, never shipped).
+# NOTE: `runtime` is deliberately LAST — platforms that build the default
+# target (Render) must get the production image. Compose override pins
+# `target: development` explicitly where needed.
 FROM node:22-alpine AS development
 RUN npm install -g pnpm@11
 WORKDIR /app
@@ -37,3 +33,12 @@ RUN pnpm install --frozen-lockfile
 COPY . .
 EXPOSE 3000
 CMD ["pnpm", "--filter", "api", "run", "start:dev"]
+
+# Stage 4 — runtime (prod deps only, LAST by design — see above)
+FROM node:22-alpine AS runtime
+COPY --from=build /prod/api /app/apps/api
+WORKDIR /app/apps/api
+EXPOSE 3000
+# Self-migrating boot: pending migrations apply before serving. Safe to
+# re-run (no-op when current) and required on hosts with no release phase.
+CMD ["sh", "-c", "node_modules/.bin/typeorm migration:run -d dist/database/data-source.js && node dist/main.js"]

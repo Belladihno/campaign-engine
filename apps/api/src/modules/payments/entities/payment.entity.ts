@@ -6,9 +6,8 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-// Type-only + string target (same discipline as User ↔ Workspace):
-// Payment must never hard-require Workspace at module-evaluation time,
-// or entity load order can deadlock in TDZ again.
+// Type-only + string target (User ↔ Workspace discipline): no eager
+// cross-entity import, or load order can deadlock in TDZ.
 import type { Workspace } from '../../workspaces/entities/workspace.entity.js';
 
 export type PaymentStatus = 'pending' | 'confirmed' | 'failed';
@@ -25,8 +24,7 @@ export class Payment {
   @JoinColumn({ name: 'workspace_id' })
   workspace: Workspace;
 
-  // Paystack transaction reference — unique per attempt.
-  @Column({ type: 'varchar', unique: true })
+  // Paystack transaction reference — unique per attempt.  @Column({ type: 'varchar', unique: true })
   reference: string;
 
   // Amount charged, in kobo (Paystack's minor unit).

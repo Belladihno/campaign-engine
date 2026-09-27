@@ -12,9 +12,8 @@ interface JwtPayload {
   workspaceId: string;
 }
 
-// Validates the Bearer token and attaches `{ userId, workspaceId }`
-// to the request (TRD §7.1). The workspaceId comes from the signed
-// payload — no workspace table lookup needed per request.
+// Validates the Bearer token and attaches `{ userId, workspaceId }`.
+// workspaceId rides the signed payload — no table lookup per request.
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(

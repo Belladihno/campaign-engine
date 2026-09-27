@@ -1,5 +1,4 @@
-/* Campaign builder on the Stitch screen: params, recipients, live cost,
-   confirm modal, real dispatch. */
+/* Campaign builder: params, recipients, live cost, confirm, dispatch. */
 import { BASE_URL, get, post } from './api.js';
 import { countSegments, detectEncoding } from './sms.js';
 import {

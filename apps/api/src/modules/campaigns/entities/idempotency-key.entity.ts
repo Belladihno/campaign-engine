@@ -10,10 +10,8 @@ import {
 // Type-only + string target (entity-cycle discipline).
 import type { Campaign } from './campaign.entity.js';
 
-// Maps a client-supplied Idempotency-Key to the campaign it created, so
-// retried POSTs (double-click, timeout retry) return the original instead
-// of charging twice. Scoped per workspace. Rows are write-once: campaignId
-// is set in the same transaction that creates the campaign.
+// Maps a client Idempotency-Key to the campaign it created — retried POSTs
+// return the original instead of charging twice. Write-once per workspace.
 @Entity('idempotency_keys')
 @Unique(['key', 'workspaceId'])
 export class IdempotencyKey {

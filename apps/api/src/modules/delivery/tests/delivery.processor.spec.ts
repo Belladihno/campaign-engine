@@ -12,8 +12,7 @@ import { AfricasTalkingService } from '../delivery.service.js';
 import { DeliveryProcessor } from '../delivery.processor.js';
 
 // BullMQ itself is never touched — the processor is driven directly with
-// stub jobs. These tests pin the TRD §7.5 contract: locked transitions,
-// QUEUED-only resume, per-contact SSE, honest terminal states.
+// stub jobs.
 describe('DeliveryProcessor', () => {
   let processor: DeliveryProcessor;
 

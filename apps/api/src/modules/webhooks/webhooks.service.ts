@@ -36,10 +36,8 @@ export class WebhooksService {
     private readonly contacts: Repository<Contact>,
   ) {}
 
-  // Paystack pipeline (TRD §7.6): verify → dedupe → credit → emit.
-  // Always answers 200 except on bad signature: Paystack retries anything
-  // else, so acknowledged-but-skipped outcomes (unknown event, unknown
-  // reference, already confirmed) still return received:true.
+  // Paystack: verify → dedupe → credit → emit. Only bad signatures 401 —
+  // Paystack retries anything else, so skips still answer received:true.
   async handlePaystack(
     rawBody: Buffer,
     signature: string | undefined,
@@ -48,8 +46,8 @@ export class WebhooksService {
     if (!signature || !this.isValidSignature(rawBody, signature, secret)) {
       throw new UnauthorizedException('Invalid webhook signature');
     }
-    // A signed-but-unparseable body is poison: no retry can heal it, so ack
-    // 200 unprocessed instead of 500-looping on Paystack's retry schedule.
+    // Signed-but-unparseable bodies are poison: no retry heals them, so ack
+    // 200 unprocessed instead of 500-looping on Paystack's retries.
     let event: PaystackChargeSuccess;
     try {
       event = JSON.parse(rawBody.toString('utf8')) as PaystackChargeSuccess;
@@ -60,8 +58,8 @@ export class WebhooksService {
       return { received: true, processed: false };
     }
 
-    // Idempotency insert doubles as the check (TRD §9.3) — concurrent
-    // redeliveries serialize on the UNIQUE constraint.
+    // Idempotency insert doubles as the check — concurrent redeliveries
+    // serialize on the UNIQUE constraint.
     try {
       await this.events.save(
         this.events.create({ eventId: `paystack:${event.data.id}` }),
@@ -100,7 +98,7 @@ export class WebhooksService {
     return { received: true, processed: true };
   }
 
-  // HMAC-SHA256 over the RAW body bytes (TRD §9.2) — never the parsed object.
+  // HMAC-SHA256 over the RAW body bytes — never the parsed object.
   private isValidSignature(
     rawBody: Buffer,
     signature: string,
@@ -116,13 +114,10 @@ export class WebhooksService {
     return actual.length === expected.length && timingSafeEqual(actual, expected);
   }
 
-  // Africa's Talking delivery receipt (TRD §7.6): match the contact by the
-  // message id the SDK returned at send time, advance it, emit SSE.
-  //
-  // Auth is URL-based by provider design: the dashboard-registered callback
-  // URL carries ?secret=<AT_WEBHOOK_SECRET>, compared here. A mismatch (or
-  // a missing/garbled payload) still answers 200 unprocessed — AT treats
-  // non-200 as retryable, and nothing about a bad secret heals on retry.
+  // Delivery receipt: match the contact by the SDK-returned message id,
+  // advance it, emit SSE. Auth is URL-based by provider design —
+  // ?secret=<AT_WEBHOOK_SECRET>; mismatch still answers 200 unprocessed
+  // because AT retries non-200 as deliverable failures.
   async handleAfricasTalking(
     receipt: { messageId?: string; status?: string },
     secret: string | undefined,
@@ -146,7 +141,7 @@ export class WebhooksService {
       return { received: true, processed: false };
     }
     // Provider vocabulary: 'Success' delivered; anything else terminal
-    // (Failed, Rejected, …) counts as failed.
+    // counts as failed.
     const next =
       status === 'Success' ? ContactStatus.DELIVERED : ContactStatus.FAILED;
     if (contact.status === next) {

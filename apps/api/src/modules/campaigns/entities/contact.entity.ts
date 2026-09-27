@@ -21,8 +21,7 @@ export class Contact {
   @Column({ type: 'uuid', name: 'campaign_id' })
   campaignId: string;
 
-  // Owner side of the relation — value import is safe here because
-  // campaign.entity.ts only references Contact by name.
+  // Owner side — value import is safe: campaign.entity only names Contact.
   @ManyToOne(() => Campaign, (campaign) => campaign.contacts, {
     onDelete: 'CASCADE',
   })

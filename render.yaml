@@ -1,0 +1,52 @@
+# Render blueprint: API (Docker) + Redis. Postgres lives on Neon (external).
+# Apply: dashboard → Blueprints → New Blueprint Instance → this repo.
+# Values marked sync:false are entered once in the dashboard (or pre-filled
+# from the service pages) and never committed.
+services:
+  - type: web
+    name: campaign-engine-api
+    runtime: docker
+    dockerContext: .
+    dockerfilePath: ./apps/api/Dockerfile
+    # Starter keeps the service awake — free sleeps, and slept webhooks
+    # mean Paystack/AT retries instead of instant crediting.
+    plan: starter
+    healthCheckPath: /api/v1/
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # PORT is injected by Render; main.ts already honors it.
+      - key: DB_HOST
+        sync: false # Neon direct host, e.g. ep-xxx.us-east-2.aws.neon.tech
+      - key: DB_PORT
+        value: 5432
+      - key: DB_NAME
+        sync: false
+      - key: DB_USER
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: DB_SSL
+        value: true
+      # Upstash Redis: paste the rediss:// connection string. The app
+      # forces TLS + maxRetriesPerRequest:null in URL mode (both mandatory).
+      - key: REDIS_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRY
+        value: 24h
+      - key: PAYSTACK_SECRET_KEY
+        sync: false
+      - key: PAYSTACK_PUBLIC_KEY
+        sync: false
+      - key: AT_API_KEY
+        sync: false
+      - key: AT_USERNAME
+        value: sandbox
+      - key: AT_SENDER_ID
+        sync: false # blank until the sender ID is registered
+      - key: AT_WEBHOOK_SECRET
+        generateValue: true
+      - key: SMS_PROVIDER
+        value: sandbox

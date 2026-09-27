@@ -1,7 +1,14 @@
-/* All fetch calls. Injects the JWT, unwraps { data }, redirects on 401. */
+/* All fetch calls. Injects the JWT, unwraps { data }, redirects on 401.
+   The API base resolves in order: explicit override (localStorage
+   'ce_api_url', e.g. a deployed API) → localhost default for local dev.
+   Set via console: localStorage.setItem('ce_api_url', 'https://…/api/v1') */
 import { getToken, clearToken } from './utils.js';
 
-export const BASE_URL = 'http://localhost:3000/api/v1';
+const storedBase = localStorage.getItem('ce_api_url');
+export const BASE_URL = (storedBase || 'http://localhost:3000/api/v1').replace(
+  /\/$/,
+  '',
+);
 
 async function request(method, path, body, extraHeaders) {
   const headers = { 'Content-Type': 'application/json', ...extraHeaders };

@@ -37,17 +37,16 @@ export class PaymentsService {
     private readonly config: ConfigService,
   ) {}
 
-  // Starts a Paystack charge and records it as PENDING. Credits move only
-  // when the webhook confirms payment (TRD §9.5) — this method never
-  // touches workspace.credits.
+  // Starts a charge and records it PENDING. Credits move only on the
+  // verified webhook — this method never touches workspace.credits.
   async initiate(
     userId: string,
     workspaceId: string,
     dto: InitiatePaymentDto,
   ): Promise<{ checkoutUrl: string; reference: string }> {
     const plan = PAYMENT_PLANS[dto.plan];
-    // Belt-and-braces: the DTO's @IsIn already 400s, but the service is
-    // also called directly (specs, future callers).
+    // Double-check: @IsIn 400s at the boundary, but direct callers
+    // (specs, future) bypass DTOs.
     if (!plan) {
       throw new BadRequestException(`Unknown plan: ${dto.plan}`);
     }

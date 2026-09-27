@@ -6,8 +6,7 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 // Type-only: the inverse side must not import Workspace at runtime, or the
-// User ↔ Workspace modules deadlock in TDZ (both reference each other at
-// class-definition time). The string target below resolves lazily instead.
+// pair deadlocks in TDZ. The string target below resolves lazily instead.
 import type { Workspace } from '../../workspaces/entities/workspace.entity.js';
 
 @Entity('users')

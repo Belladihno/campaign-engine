@@ -8,4 +8,7 @@ export default registerAs('database', () => ({
   name: requiredEnv('DB_NAME'),
   user: requiredEnv('DB_USER'),
   password: requiredEnv('DB_PASSWORD'),
+  // 'true' for managed Postgres (Neon) which mandates TLS. Off for local
+  // Docker. Optional — absent means plain TCP.
+  ssl: process.env.DB_SSL === 'true',
 }));

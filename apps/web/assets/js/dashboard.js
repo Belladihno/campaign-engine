@@ -1,5 +1,4 @@
-/* Workspace overview on the Stitch dashboard: live credits, dispatch
-   metrics from real campaign data, filterable table, Paystack tiers. */
+/* Workspace overview: live credits, dispatch metrics, tiers, modal. */
 import { BASE_URL, get, post } from './api.js';
 import { countSegments } from './sms.js';
 import {
@@ -189,8 +188,8 @@ function setSseStatus(live) {  document.getElementById('sse-dot').className = li
     : 'font-code-sm text-code-sm text-on-surface-variant uppercase font-medium';
 }
 
-// Honest latency: round-trip of the public hello route, refreshed
-// periodically. Dashes when the API is unreachable.
+// Latency: round-trip of the public hello route, refreshed periodically.
+// Dashes when the API is unreachable.
 async function probeLatency() {
   const el = document.getElementById('latency-label');
   const start = performance.now();

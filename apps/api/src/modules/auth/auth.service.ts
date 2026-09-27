@@ -31,11 +31,9 @@ export class AuthService {
     private readonly jwt: JwtService,
   ) {}
 
-  // Creates the user AND its workspace atomically — a half-registered user
-  // (no workspace) can never exist (TRD §7.1).
-  // TOCTOU note: the findOne pre-check is a fast path for the common
-  // duplicate case, NOT the guard. Two concurrent registers can both pass
-  // it — the UNIQUE constraint is the real guard, mapped back to 409 here.
+  // User + workspace are created atomically — halves can never exist.
+  // The findOne pre-check is a fast path, not the guard: concurrent
+  // registers serialize on the UNIQUE constraint, mapped back to 409.
   async register(dto: RegisterDto) {
     const existing = await this.users.findOne({
       where: { email: dto.email },
@@ -53,8 +51,8 @@ export class AuthService {
           );
           const workspace = await manager.save(
             Workspace,
-            // credits set explicitly: save() returns the passed object, and a
-            // DB-side DEFAULT would not be reflected in the register response.
+            // Credits set explicitly: save() returns the passed object, so a
+            // DB-side DEFAULT would not show in the register response.
             manager.create(Workspace, {
               userId: user.id,
               name: dto.workspaceName,

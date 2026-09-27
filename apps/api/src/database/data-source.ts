@@ -3,6 +3,9 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { DataSource } from 'typeorm';
 import { requiredEnv } from '../config/validation.js';
+
+// Optional flags (no requiredEnv): plain local TCP by default.
+const dbSsl = process.env.DB_SSL === 'true';
 import { User } from '../modules/auth/entities/user.entity.js';
 import { Workspace } from '../modules/workspaces/entities/workspace.entity.js';
 import { Payment } from '../modules/payments/entities/payment.entity.js';
@@ -23,6 +26,7 @@ const AppDataSource = new DataSource({
   database: requiredEnv('DB_NAME'),
   username: requiredEnv('DB_USER'),
   password: requiredEnv('DB_PASSWORD'),
+  ...(dbSsl ? { ssl: { rejectUnauthorized: false } } : {}),
   synchronize: false,
   logging: process.env.NODE_ENV !== 'production',
   entities: [User, Workspace, Payment, Campaign, Contact, IdempotencyKey, ProcessedWebhookEvent],

@@ -1,5 +1,4 @@
-/* Live dispatch monitor: campaign state, computed counts, recipient feed,
-   and a terminal showing the ACTUAL SSE frames received. */
+/* Live dispatch monitor: campaign counts, recipient feed, SSE terminal. */
 import { BASE_URL, get } from './api.js';
 import { requireAuth, clearToken, showToast, escapeHtml } from './utils.js';
 

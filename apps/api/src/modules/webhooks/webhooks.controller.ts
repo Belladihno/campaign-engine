@@ -23,8 +23,8 @@ export class WebhooksController {
     @Req() req: { body: unknown },
     @Headers('x-paystack-signature') signature: string | undefined,
   ) {
-    // express.raw() (main.ts) leaves a Buffer; without it (tests, misconfig)
-    // fall back to re-serializing — verification then fails closed, never open.
+    // express.raw() leaves a Buffer; without it, re-serializing fails
+    // verification closed, never open.
     const rawBody = Buffer.isBuffer(req.body)
       ? req.body
       : Buffer.from(JSON.stringify(req.body));
@@ -34,8 +34,8 @@ export class WebhooksController {
     return this.webhooks.handlePaystack(rawBody, signature);
   }
 
-  // Secret arrives as ?secret= (dashboard-registered URL) and the route
-  // never answers non-200: AT retries those as deliverable failures.
+  // Secret arrives as ?secret=; the route never answers non-200 (AT
+  // retries those as deliverable failures).
   @Post('africas-talking')
   @HttpCode(200)
   handleAfricasTalking(

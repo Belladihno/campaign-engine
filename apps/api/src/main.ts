@@ -6,14 +6,12 @@ import { AppModule } from './app.module.js';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // Raw body for Paystack HMAC-SHA256 verification (TRD §9.2).
-  // Registered first and scoped to the single webhook route so the global
-  // JSON parser never touches these bytes (parsed-then-reserialized bodies
-  // break signature verification).
+  // Raw body for Paystack HMAC verification — scoped to one route and
+  // registered before the JSON parser (re-serialized bodies break signatures).
   app.use('/api/v1/webhooks/paystack', raw({ type: 'application/json' }));
 
-  // Local demo shell opens pages via file:// — without CORS every fetch
-  // preflights and dies. Open by design here; tighten origins in production.
+  // Demo shell opens pages via file:// — without CORS every fetch
+  // preflights and dies. Open by design; tighten origins in production.
   app.enableCors();
 
   app.setGlobalPrefix('api/v1');

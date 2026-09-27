@@ -5,8 +5,8 @@ import { Contact } from '../campaigns/entities/contact.entity.js';
 import { DeliveryProcessor } from './delivery.processor.js';
 import { AfricasTalkingService } from './delivery.service.js';
 
-// Consumes the 'delivery' queue registered by CampaignsModule. SseService
-// needs no import (global). No exports — nothing calls the worker directly.
+// Consumes the 'delivery' queue registered by CampaignsModule.
+// SseService needs no import (global); no exports.
 @Module({
   imports: [TypeOrmModule.forFeature([Campaign, Contact])],
   providers: [DeliveryProcessor, AfricasTalkingService],
