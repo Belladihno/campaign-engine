@@ -6,6 +6,7 @@ import { faker } from '@faker-js/faker';
 import { createHmac } from 'node:crypto';
 import { DataSource, QueryFailedError } from 'typeorm';
 import { SseService } from '../../../shared/sse/sse.service.js';
+import { Contact } from '../../campaigns/entities/contact.entity.js';
 import { Payment } from '../../payments/entities/payment.entity.js';
 import { Workspace } from '../../workspaces/entities/workspace.entity.js';
 import { ProcessedWebhookEvent } from '../entities/processed-webhook-event.entity.js';
@@ -26,6 +27,7 @@ describe('WebhooksService (Paystack)', () => {
   };
   const payments = { findOne: vi.fn() };
   const workspaces = { findOne: vi.fn() };
+  const contacts = { findOne: vi.fn(), update: vi.fn() };
   const manager = { update: vi.fn(), increment: vi.fn() };
   const dataSource = {
     transaction: vi.fn(async (cb: (m: typeof manager) => unknown) =>
@@ -36,6 +38,7 @@ describe('WebhooksService (Paystack)', () => {
   const config = {
     getOrThrow: vi.fn((key: string) => {
       if (key === 'PAYSTACK_SECRET_KEY') return SECRET;
+      if (key === 'AT_API_KEY') return 'at_test_key';
       throw new Error(`Unexpected config key: ${key}`);
     }),
   };
@@ -79,6 +82,7 @@ describe('WebhooksService (Paystack)', () => {
         },
         { provide: getRepositoryToken(Payment), useValue: payments },
         { provide: getRepositoryToken(Workspace), useValue: workspaces },
+        { provide: getRepositoryToken(Contact), useValue: contacts },
         { provide: DataSource, useValue: dataSource },
         { provide: ConfigService, useValue: config },
         { provide: SseService, useValue: sse },
@@ -106,6 +110,16 @@ describe('WebhooksService (Paystack)', () => {
     expect(payments.findOne).not.toHaveBeenCalled();
     expect(dataSource.transaction).not.toHaveBeenCalled();
     expect(sse.emit).not.toHaveBeenCalled();
+  });
+
+  it('acks 200 unprocessed for a signed-but-unparseable body', async () => {
+    const raw = Buffer.from('not-json{');
+    const signature = createHmac('sha256', SECRET).update(raw).digest('hex');
+
+    const result = await service.handlePaystack(raw, signature);
+
+    expect(result).toEqual({ received: true, processed: false });
+    expect(events.save).not.toHaveBeenCalled();
   });
 
   it('confirms the payment, credits the workspace, and emits SSE', async () => {
@@ -139,6 +153,107 @@ describe('WebhooksService (Paystack)', () => {
       credits: 50,
       reference: payment.reference,
     });
+    expect(result).toEqual({ received: true, processed: true });
+  });
+});
+
+describe('WebhooksService (Africa\u2019s Talking)', () => {
+  let service: WebhooksService;
+
+  const contacts = { findOne: vi.fn(), update: vi.fn() };
+  const sse = { emit: vi.fn() };
+  const events = {
+    create: vi.fn((value: Record<string, unknown>) => value),
+    save: vi.fn(async (value: Record<string, unknown>) => ({
+      id: faker.string.uuid(),
+      ...value,
+    })),
+  };
+  const payments = { findOne: vi.fn() };
+  const workspaces = { findOne: vi.fn() };
+  const manager = { update: vi.fn(), increment: vi.fn() };
+  const dataSource = {
+    transaction: vi.fn(async (cb: (m: typeof manager) => unknown) =>
+      cb(manager),
+    ),
+  };
+  const config = {
+    getOrThrow: vi.fn((key: string) => {
+      if (key === 'PAYSTACK_SECRET_KEY') return SECRET;
+      if (key === 'AT_API_KEY') return 'at_test_key';
+      throw new Error(`Unexpected config key: ${key}`);
+    }),
+  };
+
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        WebhooksService,
+        {
+          provide: getRepositoryToken(ProcessedWebhookEvent),
+          useValue: events,
+        },
+        { provide: getRepositoryToken(Payment), useValue: payments },
+        { provide: getRepositoryToken(Workspace), useValue: workspaces },
+        { provide: getRepositoryToken(Contact), useValue: contacts },
+        { provide: DataSource, useValue: dataSource },
+        { provide: ConfigService, useValue: config },
+        { provide: SseService, useValue: sse },
+      ],
+    }).compile();
+    service = module.get<WebhooksService>(WebhooksService);
+  });
+
+  it('marks the contact DELIVERED on a Delivered receipt', async () => {
+    const contact = {
+      id: faker.string.uuid(),
+      campaignId: faker.string.uuid(),
+      workspaceId: faker.string.uuid(),
+      status: 'SENT',
+      atMessageId: 'ATX123',
+    };
+    contacts.findOne.mockResolvedValue(contact);
+
+    const result = await service.handleAfricasTalking(
+      { messageId: 'ATX123', status: 'Delivered' },
+      'at_test_key',
+    );
+
+    expect(contacts.findOne).toHaveBeenCalledWith({
+      where: { atMessageId: 'ATX123' },
+    });
+    expect(contacts.update).toHaveBeenCalledWith(
+      { id: contact.id },
+      { status: 'DELIVERED' },
+    );
+    expect(sse.emit).toHaveBeenCalledWith(contact.workspaceId, 'contact_updated', {
+      contactId: contact.id,
+      campaignId: contact.campaignId,
+      status: 'DELIVERED',
+    });
+    expect(result).toEqual({ received: true, processed: true });
+  });
+
+  it('marks the contact FAILED on a Failed receipt', async () => {
+    const contact = {
+      id: faker.string.uuid(),
+      campaignId: faker.string.uuid(),
+      workspaceId: faker.string.uuid(),
+      status: 'SENT',
+      atMessageId: 'ATX456',
+    };
+    contacts.findOne.mockResolvedValue(contact);
+
+    const result = await service.handleAfricasTalking(
+      { messageId: 'ATX456', status: 'Failed' },
+      'at_test_key',
+    );
+
+    expect(contacts.update).toHaveBeenCalledWith(
+      { id: contact.id },
+      { status: 'FAILED' },
+    );
     expect(result).toEqual({ received: true, processed: true });
   });
 });

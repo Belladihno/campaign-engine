@@ -10,6 +10,7 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard.js';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter.js';
 import { ResponseTransformInterceptor } from './common/interceptors/response-transform.interceptor.js';
 import { AuthModule } from './modules/auth/auth.module.js';
+import { CampaignsModule } from './modules/campaigns/campaigns.module.js';
 import { PaymentsModule } from './modules/payments/payments.module.js';
 import { WebhooksModule } from './modules/webhooks/webhooks.module.js';
 import { WorkspacesModule } from './modules/workspaces/workspaces.module.js';
@@ -67,6 +68,7 @@ import { validateEnv } from './config/validation.js';
     AuthModule,
     WorkspacesModule,
     PaymentsModule,
+    CampaignsModule,
     WebhooksModule,
     SseModule,
   ],

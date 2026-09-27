@@ -15,6 +15,11 @@ import { User } from './entities/user.entity.js';
 
 const BCRYPT_COST = 12;
 
+// Pre-hashed dummy burned once at boot. Compared on the unknown-email path
+// so a miss costs ~the same ~250ms as a real compare — otherwise login
+// timing reveals which emails exist.
+const DUMMY_HASH = bcrypt.hashSync('nonexistent-user-dummy', BCRYPT_COST);
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -70,11 +75,11 @@ export class AuthService {
 
   async login(dto: LoginDto) {
     const user = await this.users.findOne({ where: { email: dto.email } });
-    if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
-    const passwordOk = await bcrypt.compare(dto.password, user.passwordHash);
-    if (!passwordOk) {
+    // Dummy compare keeps miss timing indistinguishable from a real check.
+    const passwordOk = user
+      ? await bcrypt.compare(dto.password, user.passwordHash)
+      : !(await bcrypt.compare(dto.password, DUMMY_HASH));
+    if (!user || !passwordOk) {
       throw new UnauthorizedException('Invalid credentials');
     }
     // Always present — register creates it in the same transaction.

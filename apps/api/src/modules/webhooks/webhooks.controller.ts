@@ -1,4 +1,5 @@
 import {
+  Body,
   Controller,
   Headers,
   HttpCode,
@@ -9,9 +10,7 @@ import {
 import { Public } from '../../common/decorators/public.decorator.js';
 import { WebhooksService } from './webhooks.service.js';
 
-// No JWT here — Paystack authenticates with the HMAC signature instead.
-// NOTE: Africa's Talking delivery receipts land in Step 11 alongside the
-// Contact entity they update.
+// No JWT here — both providers authenticate with shared secrets instead.
 @Public()
 @Controller('webhooks')
 export class WebhooksController {
@@ -32,5 +31,17 @@ export class WebhooksController {
       throw new UnauthorizedException('Missing webhook signature');
     }
     return this.webhooks.handlePaystack(rawBody, signature);
+  }
+
+  @Post('africas-talking')
+  @HttpCode(200)
+  handleAfricasTalking(
+    @Body() body: Record<string, unknown>,
+    @Headers('x-at-secret') secret: string | undefined,
+  ) {
+    const messageId =
+      typeof body?.messageId === 'string' ? body.messageId : undefined;
+    const status = typeof body?.status === 'string' ? body.status : undefined;
+    return this.webhooks.handleAfricasTalking({ messageId, status }, secret);
   }
 }

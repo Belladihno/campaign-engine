@@ -6,6 +6,9 @@ import { requiredEnv } from '../config/validation.js';
 import { User } from '../modules/auth/entities/user.entity.js';
 import { Workspace } from '../modules/workspaces/entities/workspace.entity.js';
 import { Payment } from '../modules/payments/entities/payment.entity.js';
+import { Campaign } from '../modules/campaigns/entities/campaign.entity.js';
+import { Contact } from '../modules/campaigns/entities/contact.entity.js';
+import { IdempotencyKey } from '../modules/campaigns/entities/idempotency-key.entity.js';
 import { ProcessedWebhookEvent } from '../modules/webhooks/entities/processed-webhook-event.entity.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -22,7 +25,7 @@ const AppDataSource = new DataSource({
   password: requiredEnv('DB_PASSWORD'),
   synchronize: false,
   logging: process.env.NODE_ENV !== 'production',
-  entities: [User, Workspace, Payment, ProcessedWebhookEvent],
+  entities: [User, Workspace, Payment, Campaign, Contact, IdempotencyKey, ProcessedWebhookEvent],
   migrations: [`${__dirname}/migrations/*.js`],
 });
 

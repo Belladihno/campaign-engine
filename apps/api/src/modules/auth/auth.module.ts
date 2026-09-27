@@ -44,5 +44,8 @@ function parseExpiryToSeconds(raw: string): number {
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy],
+  // JwtModule re-export: campaigns verifies SSE ?token= with the same
+  // configured instance (single secret/expiry source).
+  exports: [JwtModule],
 })
 export class AuthModule {}
