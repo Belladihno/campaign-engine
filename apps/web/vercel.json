@@ -1,5 +1,4 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "$comment": "Mirror of /vercel.json. Vercel reads only the file at the project root: whichever directory is configured as Root Directory (repo root or apps/web), one of the two copies applies. Keep them identical.",
   "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
 }
