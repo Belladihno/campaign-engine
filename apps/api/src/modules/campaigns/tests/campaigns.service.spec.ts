@@ -117,14 +117,10 @@ describe('CampaignsService', () => {
     await service.create(workspace.id, dto(1));
 
     expect(queue.add).toHaveBeenCalledTimes(1);
-    const [name, payload, options] = queue.add.mock.calls[0];
+    const [name, payload] = queue.add.mock.calls[0];
     const jobPayload: { campaignId: string } = payload;
     expect(name).toBe('send-campaign');
     expect(jobPayload).toEqual({ campaignId: expect.any(String) });
-    expect(options).toEqual({
-      attempts: 3,
-      backoff: { type: 'exponential', delay: 5000 },
-    });
     // The enqueued id is the created campaign's id — the same id the
     // service then loads for its 201 response.
     expect(campaigns.findOne).toHaveBeenCalledWith({
@@ -179,11 +175,9 @@ describe('CampaignsService', () => {
 
       await service.onModuleInit();
 
-      expect(queue.add).toHaveBeenCalledWith(
-        'send-campaign',
-        { campaignId: orphanId },
-        { attempts: 3, backoff: { type: 'exponential', delay: 5000 } },
-      );
+      expect(queue.add).toHaveBeenCalledWith('send-campaign', {
+        campaignId: orphanId,
+      });
     });
 
     it('does nothing when no orphans exist', async () => {

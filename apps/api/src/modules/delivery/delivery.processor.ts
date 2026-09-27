@@ -12,10 +12,13 @@ import { ContactStatus } from '../campaigns/enums/contact-status.enum.js';
 import { AfricasTalkingService } from './delivery.service.js';
 
 // BullMQ worker for the 'delivery' queue (TRD §7.5). One job per campaign.
+// The limiter is ENFORCED here (not display text): sends run sequentially
+// today so 10/sec never binds — but it caps the blast radius the day
+// concurrency rises, and providers throttle aggressive senders.
 // Idempotency (dual-send prevention): the campaign row is locked before
 // any transition, non-PENDING jobs no-op, and only QUEUED contacts are
 // ever touched — a retry resumes exactly where the crash left off.
-@Processor('delivery')
+@Processor('delivery', { limiter: { max: 10, duration: 1000 } })
 @Injectable()
 export class DeliveryProcessor extends WorkerHost {
   private readonly logger = new Logger(DeliveryProcessor.name);

@@ -1,0 +1,282 @@
+/* Buttons, inputs, cards, badges, modal, toast, spinner, progress, tables. */
+
+/* --- Buttons --- */
+.btn {
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
+  font-weight: 500;
+  padding: 10px var(--space-2);
+  border-radius: var(--radius-control);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--color-text-primary);
+  border-color: var(--color-border);
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background: var(--color-surface-raised);
+}
+
+.btn-danger {
+  background: var(--color-danger);
+  color: #fff;
+}
+
+/* --- Inputs --- */
+.input, .textarea {
+  width: 100%;
+  background: var(--color-bg);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  padding: 10px 12px;
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 96px;
+}
+
+.input:focus, .textarea:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-color: var(--color-primary);
+}
+
+.input::placeholder, .textarea::placeholder {
+  color: var(--color-text-muted);
+}
+
+/* --- Cards --- */
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  padding: var(--space-3);
+}
+
+.card-raised {
+  background: var(--color-surface-raised);
+}
+
+/* --- Status badges: tinted bg (15%), full-color text, uppercase label --- */
+.badge {
+  display: inline-block;
+  font-size: var(--text-label);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.badge-muted {
+  color: var(--color-text-secondary);
+  background: rgba(158, 145, 137, 0.15);
+}
+
+.badge-processing {
+  color: var(--color-warning);
+  background: rgba(240, 164, 41, 0.15);
+}
+
+.badge-sent {
+  color: var(--color-success);
+  background: rgba(62, 207, 142, 0.15);
+}
+
+.badge-contact-sent {
+  color: var(--color-info);
+  background: rgba(74, 168, 255, 0.15);
+}
+
+.badge-delivered {
+  color: var(--color-success);
+  background: rgba(62, 207, 142, 0.15);
+}
+
+.badge-failed {
+  color: var(--color-danger);
+  background: rgba(229, 72, 77, 0.15);
+}
+
+.badge-queued {
+  color: var(--color-text-secondary);
+  background: rgba(158, 145, 137, 0.15);
+}
+
+.badge-pending {
+  color: var(--color-text-secondary);
+  background: rgba(158, 145, 137, 0.15);
+}
+
+.badge-partially-sent {
+  color: var(--color-warning);
+  background: rgba(240, 164, 41, 0.15);
+}
+
+/* --- Modal --- */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+
+.modal-overlay[hidden] {
+  display: none;
+}
+
+.modal {
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  padding: var(--space-3);
+  width: min(520px, calc(100vw - 32px));
+}
+
+/* --- Toast (top-right, auto-dismiss) --- */
+#toast-root {
+  position: fixed;
+  top: var(--space-2);
+  right: var(--space-2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  z-index: 100;
+}
+
+.toast {
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-primary);
+  border-radius: var(--radius-control);
+  padding: 10px var(--space-2);
+  max-width: 360px;
+}
+
+.toast-error {
+  border-left-color: var(--color-danger);
+}
+
+.toast-success {
+  border-left-color: var(--color-success);
+}
+
+/* --- Spinner --- */
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* --- Progress bar --- */
+.progress-bar {
+  height: 10px;
+  background: var(--color-border);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--color-primary);
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+/* --- Tables --- */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-body);
+}
+
+.table th, .table td {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.table th {
+  font-size: var(--text-label);
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* --- SSE live indicator + processing pulse --- */
+.live-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-text-muted);
+  margin-right: 6px;
+}
+
+.live-dot.live {
+  background: var(--color-success);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.pulse-header {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* --- Inline form errors --- */
+.form-error {
+  color: var(--color-danger);
+  font-size: var(--text-label);
+  margin-top: var(--space-1);
+  min-height: 1.2em;
+}
+
+.field {
+  margin-bottom: var(--space-2);
+}

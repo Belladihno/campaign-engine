@@ -201,11 +201,11 @@ export class CampaignsService implements OnModuleInit {
   }
 
   private async enqueueDelivery(campaignId: string): Promise<void> {
-    await this.deliveryQueue.add(
-      'send-campaign',
-      { campaignId } satisfies DeliveryJobPayload,
-      { attempts: 3, backoff: { type: 'exponential', delay: 5000 } },
-    );
+    // Retry policy + rate limit live on the queue registration
+    // (campaigns.module.ts) — single source, applies to sweeper jobs too.
+    await this.deliveryQueue.add('send-campaign', {
+      campaignId,
+    } satisfies DeliveryJobPayload);
   }
 
   private normalizeKey(raw: string | undefined): string | undefined {

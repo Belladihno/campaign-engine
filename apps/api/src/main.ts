@@ -12,6 +12,10 @@ async function bootstrap() {
   // break signature verification).
   app.use('/api/v1/webhooks/paystack', raw({ type: 'application/json' }));
 
+  // Local demo shell opens pages via file:// — without CORS every fetch
+  // preflights and dies. Open by design here; tighten origins in production.
+  app.enableCors();
+
   app.setGlobalPrefix('api/v1');
 
   app.useGlobalPipes(

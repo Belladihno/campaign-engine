@@ -26,3 +26,7 @@ coverage/
 
 # Internal working docs (not for the repo)
 campaign-engine-trd.md
+frontend.md
+
+# Stitch design sources (reference only, not shipped)
+stitch_campaign_engine_frontend/
