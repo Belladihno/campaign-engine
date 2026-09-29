@@ -22,7 +22,7 @@ export class WebhooksController {
 
   @Post('paystack')
   @HttpCode(200)
-  async handlePaystack(
+  handlePaystack(
     @Req() req: { body: unknown },
     @Headers('x-paystack-signature') signature: string | undefined,
   ) {
@@ -32,20 +32,12 @@ export class WebhooksController {
       ? req.body
       : Buffer.from(JSON.stringify(req.body));
     this.logger.log(
-      `Paystack webhook hit — signature present: ${!!signature}, body: Buffer(${rawBody.length}b), raw: ${Buffer.isBuffer(req.body)}`,
+      `Paystack webhook hit — signature present: ${!!signature}, body: Buffer(${rawBody.length}b)`,
     );
     if (!signature) {
       throw new UnauthorizedException('Missing webhook signature');
     }
-    this.logger.log('About to call handlePaystack()');
-    try {
-      const result = await this.webhooks.handlePaystack(rawBody, signature);
-      this.logger.log('handlePaystack() completed successfully');
-      return result;
-    } catch (error) {
-      this.logger.error('handlePaystack() FAILED', (error as Error)?.stack);
-      throw error;
-    }
+    return this.webhooks.handlePaystack(rawBody, signature);
   }
 
   // Secret arrives as ?secret=; the route never answers non-200 (AT

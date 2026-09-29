@@ -67,12 +67,10 @@ export class WebhooksService {
 
     // Idempotency insert doubles as the check — concurrent redeliveries
     // serialize on the UNIQUE constraint.
-    this.logger.log('Saving webhook event...');
     try {
-      const saved = await this.events.save(
+      await this.events.save(
         this.events.create({ eventId: `paystack:${event.data.id}` }),
       );
-      this.logger.log(`Webhook event saved: ${saved.id}`);
     } catch (error) {
       if (isUniqueViolation(error)) {
         this.logger.log(
@@ -83,11 +81,9 @@ export class WebhooksService {
       throw error;
     }
 
-    this.logger.log('Finding payment...');
     const payment = await this.payments.findOne({
       where: { reference: event.data.reference },
     });
-    this.logger.log('Payment lookup completed');
     if (!payment || payment.status === 'confirmed') {
       this.logger.warn(
         `Paystack webhook: reference ${event.data.reference} unknown or already confirmed, skipping`,
@@ -95,7 +91,6 @@ export class WebhooksService {
       return { received: true, processed: false };
     }
 
-    this.logger.log('Starting payment transaction...');
     await this.dataSource.transaction(async (manager) => {
       await manager.update(Payment, { id: payment.id }, { status: 'confirmed' });
       await manager.increment(
@@ -105,7 +100,6 @@ export class WebhooksService {
         payment.creditsAdded,
       );
     });
-    this.logger.log('Payment transaction completed');
 
     const workspace = await this.workspaces.findOne({
       where: { id: payment.workspaceId },
@@ -117,7 +111,6 @@ export class WebhooksService {
     this.logger.log(
       `Paystack webhook: confirmed ${payment.reference}, credited ${payment.creditsAdded}`,
     );
-    this.logger.log('Webhook processing completed');
     return { received: true, processed: true };
   }
 
