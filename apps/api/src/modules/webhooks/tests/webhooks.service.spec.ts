@@ -48,7 +48,7 @@ describe('WebhooksService (Paystack)', () => {
     signature: string;
   } {
     const raw = Buffer.from(JSON.stringify(payload));
-    const signature = createHmac('sha256', SECRET).update(raw).digest('hex');
+    const signature = createHmac('sha512', SECRET).update(raw).digest('hex');
     return { raw, signature };
   }
 
@@ -114,7 +114,7 @@ describe('WebhooksService (Paystack)', () => {
 
   it('acks 200 unprocessed for a signed-but-unparseable body', async () => {
     const raw = Buffer.from('not-json{');
-    const signature = createHmac('sha256', SECRET).update(raw).digest('hex');
+    const signature = createHmac('sha512', SECRET).update(raw).digest('hex');
 
     const result = await service.handlePaystack(raw, signature);
 

@@ -121,13 +121,14 @@ export class WebhooksService {
     return { received: true, processed: true };
   }
 
-  // HMAC-SHA256 over the RAW body bytes — never the parsed object.
+  // HMAC-SHA512 over the RAW body bytes — never the parsed object
+  // (Paystack signs with SHA512, hex-encoded).
   private isValidSignature(
     rawBody: Buffer,
     signature: string,
     secret: string,
   ): boolean {
-    const expected = createHmac('sha256', secret).update(rawBody).digest();
+    const expected = createHmac('sha512', secret).update(rawBody).digest();
     let actual: Buffer;
     try {
       actual = Buffer.from(signature, 'hex');
