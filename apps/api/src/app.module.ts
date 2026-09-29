@@ -67,6 +67,13 @@ function fromRedisUrl(url: string, fallbackPassword?: string) {
         ...(config.getOrThrow<boolean>('database.ssl')
           ? { ssl: { rejectUnauthorized: false } }
           : {}),
+        extra: {
+          // node-postgres waits FOREVER for a pool client by default — a
+          // wedged pool then hangs webhooks silently until Paystack times
+          // out. Fail fast so the error surfaces in logs and retries heal.
+          connectionTimeoutMillis: 10_000,
+          query_timeout: 30_000,
+        },
         synchronize: false,
         autoLoadEntities: true,
       }),
