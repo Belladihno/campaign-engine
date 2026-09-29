@@ -3,6 +3,7 @@ import {
   Controller,
   Headers,
   HttpCode,
+  Logger,
   Post,
   Query,
   Req,
@@ -15,6 +16,8 @@ import { WebhooksService } from './webhooks.service.js';
 @Public()
 @Controller('webhooks')
 export class WebhooksController {
+  private readonly logger = new Logger(WebhooksController.name);
+
   constructor(private readonly webhooks: WebhooksService) {}
 
   @Post('paystack')
@@ -28,6 +31,9 @@ export class WebhooksController {
     const rawBody = Buffer.isBuffer(req.body)
       ? req.body
       : Buffer.from(JSON.stringify(req.body));
+    this.logger.log(
+      `Paystack webhook hit — signature present: ${!!signature}, body: Buffer(${rawBody.length}b)`,
+    );
     if (!signature) {
       throw new UnauthorizedException('Missing webhook signature');
     }

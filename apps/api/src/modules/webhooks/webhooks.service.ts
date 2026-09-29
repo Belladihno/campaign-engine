@@ -61,6 +61,9 @@ export class WebhooksService {
       this.logger.log(`Paystack webhook: ignoring event ${event?.event}`);
       return { received: true, processed: false };
     }
+    this.logger.log(
+      `Paystack webhook verified — event: charge.success, ref: ${event.data.reference}`,
+    );
 
     // Idempotency insert doubles as the check — concurrent redeliveries
     // serialize on the UNIQUE constraint.
