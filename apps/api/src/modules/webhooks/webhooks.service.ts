@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { createHmac, timingSafeEqual } from 'node:crypto';
@@ -22,6 +22,8 @@ interface PaystackChargeSuccess {
 
 @Injectable()
 export class WebhooksService {
+  private readonly logger = new Logger(WebhooksService.name);
+
   constructor(
     private readonly dataSource: DataSource,
     private readonly config: ConfigService,
@@ -52,9 +54,11 @@ export class WebhooksService {
     try {
       event = JSON.parse(rawBody.toString('utf8')) as PaystackChargeSuccess;
     } catch {
+      this.logger.warn('Paystack webhook: unparseable body, acking unprocessed');
       return { received: true, processed: false };
     }
     if (event?.event !== 'charge.success') {
+      this.logger.log(`Paystack webhook: ignoring event ${event?.event}`);
       return { received: true, processed: false };
     }
 
@@ -66,6 +70,9 @@ export class WebhooksService {
       );
     } catch (error) {
       if (isUniqueViolation(error)) {
+        this.logger.log(
+          `Paystack webhook: duplicate event paystack:${event.data.id}, skipping`,
+        );
         return { received: true, processed: false };
       }
       throw error;
@@ -75,6 +82,9 @@ export class WebhooksService {
       where: { reference: event.data.reference },
     });
     if (!payment || payment.status === 'confirmed') {
+      this.logger.warn(
+        `Paystack webhook: reference ${event.data.reference} unknown or already confirmed, skipping`,
+      );
       return { received: true, processed: false };
     }
 
@@ -95,6 +105,9 @@ export class WebhooksService {
       credits: workspace?.credits ?? null,
       reference: payment.reference,
     });
+    this.logger.log(
+      `Paystack webhook: confirmed ${payment.reference}, credited ${payment.creditsAdded}`,
+    );
     return { received: true, processed: true };
   }
 
