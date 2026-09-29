@@ -32,7 +32,7 @@ export class WebhooksController {
       ? req.body
       : Buffer.from(JSON.stringify(req.body));
     this.logger.log(
-      `Paystack webhook hit — signature present: ${!!signature}, body: Buffer(${rawBody.length}b)`,
+      `Paystack webhook hit — signature present: ${!!signature}, body: Buffer(${rawBody.length}b), raw: ${Buffer.isBuffer(req.body)}`,
     );
     if (!signature) {
       throw new UnauthorizedException('Missing webhook signature');
